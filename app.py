@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 import json
+import math
 
 app = Flask(__name__)
 
@@ -30,8 +31,8 @@ def settings():
         mi = int(request.form["MI"])
         trans = int(request.form["Trans"])
 
-        total_headcount = ce // 550  # Adjust total headcount
-        trans_count = trans // 1000  # Number of people needed for Trans
+        total_headcount = math.ceil(ce / 550)  # Adjust total headcount, rounding up
+        trans_count = math.ceil(trans / 1000)  # Number of people needed for Trans, rounding up
         return redirect(url_for("index"))
     return render_template("settings.html", total_headcount=total_headcount, trans_count=trans_count)
 
