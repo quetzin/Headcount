@@ -15,6 +15,30 @@ barcode_to_info = {str(associate["barcode"]): f"{associate['first_name']} ({asso
 total_headcount = 0  # Will be dynamically set
 trans_count = 0  # Will be dynamically set
 
+# Predefined roles
+roles = {
+    "Critical": {
+        "Pit": 0,
+        "CPT": 0,
+        "Ship Clerk": 0,
+        "DEA": 0,
+        "Fluid PS": 0,
+        "Main PS": 0,
+        "Robotics Operator": 0,
+    },
+    "Non-Critical": {
+        "Flats": 0,
+        "MI": 0,
+        "WS": 0,
+        "Fluids": 0,
+        "Main High Cap": 0,
+        "Mid High Cap": 0,
+        "Mid Cap": 0,
+        "Trans": 0,
+        "Carts": 0,
+    }
+}
+
 # Store checked-in associates
 associates = []
 trans_associates = []  # Separate list for associates working in Trans
@@ -33,8 +57,22 @@ def settings():
 
         total_headcount = math.ceil(ce / 550)  # Adjust total headcount, rounding up
         trans_count = math.ceil(trans / 1000)  # Number of people needed for Trans, rounding up
-        return redirect(url_for("index"))
+        return redirect(url_for("assign_roles"))
     return render_template("settings.html", total_headcount=total_headcount, trans_count=trans_count)
+
+@app.route("/assign_roles", methods=["GET", "POST"])
+def assign_roles():
+    global roles
+    if request.method == "POST":
+        assigned_total = sum(int(request.form[role]) for category in roles for role in roles[category])
+        if assigned_total != total_headcount:
+            return jsonify({"error": "Total assigned must equal total headcount"}), 400
+
+        for category in roles:
+            for role in roles[category]:
+                roles[category][role] = int(request.form[role])
+        return redirect(url_for("index"))
+    return render_template("assign_roles.html", roles=roles, total_headcount=total_headcount)
 
 @app.route("/checkin", methods=["POST"])
 def checkin():
