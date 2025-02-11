@@ -45,7 +45,7 @@ trans_associates = []  # Separate list for associates working in Trans
 
 @app.route("/")
 def index():
-    return render_template("index.html", associates=associates, trans_associates=trans_associates, total_headcount=total_headcount)
+    return render_template("index.html", associates=associates, trans_associates=trans_associates, total_headcount=total_headcount, trans_count=trans_count)
 
 @app.route("/settings", methods=["GET", "POST"])
 def settings():
@@ -57,6 +57,10 @@ def settings():
 
         total_headcount = math.ceil(ce / 550)  # Adjust total headcount, rounding up
         trans_count = math.ceil(trans / 1000)  # Number of people needed for Trans, rounding up
+        
+        if trans > trans_count * 1000:
+            return jsonify({"error": "Transitional Employees cannot exceed " + str(trans_count * 1000)}), 400
+        
         return redirect(url_for("assign_roles"))
     return render_template("settings.html", total_headcount=total_headcount, trans_count=trans_count)
 
@@ -84,6 +88,8 @@ def checkin():
         return jsonify({"error": "Badge already scanned"}), 400
 
     if in_trans:
+        if len(trans_associates) >= trans_count:
+            return jsonify({"error": "Transitional Employees limit reached"}), 400
         trans_associates.append(name)
     else:
         if len(associates) >= total_headcount:
