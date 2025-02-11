@@ -15,45 +15,71 @@
 
         <form action="/checkin" method="post">
             <input type="text" name="badge_id" placeholder="Scan Badge Here" required>
-            <label>
-                <input type="checkbox" name="in_trans"> Working in Trans
-            </label>
+            <label for="role">Select Role:</label>
+            <select name="role" required>
+                <option value="Trans">Trans</option>
+                {% for category, role_list in roles.items() %}
+                    {% for role in role_list %}
+                        <option value="{{ role }}">{{ role }}</option>
+                    {% endfor %}
+                {% endfor %}
+            </select>
             <button type="submit">Check-In</button>
         </form>
 
         <h3>Checked-in Associates</h3>
         <ul>
-            {% for name in associates %}
+            {% for name, role in associates.items() %}
                 <li>
-                    {{ name }}
+                    {{ name }} - {{ role }}
                     <form action="/remove" method="post" style="display:inline;">
                         <input type="hidden" name="name" value="{{ name }}">
                         <button type="submit">Remove</button>
                     </form>
                     <form action="/move" method="post" style="display:inline;">
                         <input type="hidden" name="name" value="{{ name }}">
-                        <button type="submit">Move to Trans</button>
+                        <label for="new_role">Move to:</label>
+                        <select name="new_role" required>
+                            {% for category, role_list in roles.items() %}
+                                {% for role in role_list %}
+                                    <option value="{{ role }}">{{ role }}</option>
+                                {% endfor %}
+                            {% endfor %}
+                        </select>
+                        <button type="submit">Move</button>
                     </form>
                 </li>
             {% endfor %}
         </ul>
 
-        <h3>Associates in Trans</h3>
+        <h3>Current Trans Workers</h3>
         <ul>
-            {% for name in trans_associates %}
+            {% for name, role in trans_associates.items() %}
                 <li>
-                    {{ name }}
+                    {{ name }} - {{ role }}
                     <form action="/remove" method="post" style="display:inline;">
                         <input type="hidden" name="name" value="{{ name }}">
                         <button type="submit">Remove</button>
                     </form>
                     <form action="/move" method="post" style="display:inline;">
                         <input type="hidden" name="name" value="{{ name }}">
-                        <button type="submit">Move to Regular</button>
+                        <label for="new_role">Move to:</label>
+                        <select name="new_role" required>
+                            {% for category, role_list in roles.items() %}
+                                {% for role in role_list %}
+                                    <option value="{{ role }}">{{ role }}</option>
+                                {% endfor %}
+                            {% endfor %}
+                        </select>
+                        <button type="submit">Move</button>
                     </form>
                 </li>
             {% endfor %}
         </ul>
+
+        <form action="/reset" method="post">
+            <button type="submit">Reset for Next Shift</button>
+        </form>
 
         <br>
         <a href="/settings"><button type="button">Go to Settings</button></a>

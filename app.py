@@ -39,13 +39,13 @@ roles = {
     }
 }
 
-# Store checked-in associates
-associates = []
-trans_associates = []  # Separate list for associates working in Trans
+# Store checked-in associates (now a dictionary to track roles)
+associates = {}
+trans_associates = {}  # Store associates working in Trans or Pit
 
 @app.route("/")
 def index():
-    return render_template("index.html", associates=associates, trans_associates=trans_associates, total_headcount=total_headcount, trans_count=trans_count)
+    return render_template("index.html", associates=associates, trans_associates=trans_associates, roles=roles, total_headcount=total_headcount, trans_count=trans_count)
 
 @app.route("/settings", methods=["GET", "POST"])
 def settings():
@@ -81,48 +81,51 @@ def assign_roles():
 @app.route("/checkin", methods=["POST"])
 def checkin():
     badge_id = request.form["badge_id"]
-    in_trans = request.form.get("in_trans") == "on"
+    role = request.form.get("role")
     name = barcode_to_info.get(badge_id, "Unknown")
 
     if name in associates or name in trans_associates:
         return jsonify({"error": "Badge already scanned"}), 400
 
-    if in_trans:
-        if len(trans_associates) >= trans_count:
-            return jsonify({"error": "Transitional Employees limit reached"}), 400
-        trans_associates.append(name)
+    if role in ["Trans", "Pit"]:
+        trans_associates[name] = role  # Store associate in trans workers counter
     else:
-        if len(associates) >= total_headcount:
-            return jsonify({"error": "Headcount limit reached"}), 400
-        associates.append(name)
-
+        associates[name] = role  # Store associate in regular check-ins
+    
     return redirect(url_for("index"))
 
 @app.route("/remove", methods=["POST"])
 def remove():
     name = request.form["name"]
     if name in associates:
-        associates.remove(name)
+        del associates[name]
     elif name in trans_associates:
-        trans_associates.remove(name)
+        del trans_associates[name]
     return redirect(url_for("index"))
 
 @app.route("/move", methods=["POST"])
 def move():
     name = request.form["name"]
+    new_role = request.form["new_role"]
     if name in associates:
-        associates.remove(name)
-        trans_associates.append(name)
+        del associates[name]
+        if new_role in ["Trans", "Pit"]:
+            trans_associates[name] = new_role
+        else:
+            associates[name] = new_role
     elif name in trans_associates:
-        trans_associates.remove(name)
-        associates.append(name)
+        del trans_associates[name]
+        if new_role in ["Trans", "Pit"]:
+            trans_associates[name] = new_role
+        else:
+            associates[name] = new_role
     return redirect(url_for("index"))
 
 @app.route("/reset", methods=["POST"])
 def reset():
     global associates, trans_associates
-    associates = []
-    trans_associates = []
+    associates = {}  # Reset all checked-in associates
+    trans_associates = {}  # Reset all trans workers
     return redirect(url_for("index"))
 
 if __name__ == "__main__":
