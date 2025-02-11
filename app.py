@@ -3,11 +3,11 @@ import json
 
 app = Flask(__name__)
 
-# Load associates data from JSON file
+# Load associates data from JSON file and ensure barcodes are treated as strings
 with open("names.json", "r") as f:
     associates_data = json.load(f)
 
-# Create a mapping from barcode to first name and login
+# Create a mapping from barcode (as a string) to first name and login
 barcode_to_info = {str(associate["barcode"]): f"{associate['first_name']} ({associate['login']})" for associate in associates_data}
 
 # Default values for CE, MI, and Trans
