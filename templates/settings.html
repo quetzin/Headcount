@@ -1,30 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Settings - Headcount Allocation</title>
+    <title>Settings</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-    <h2>Manager Settings</h2>
-    <form action="/settings" method="post">
-        <label for="CE">CE (Critical Employees):</label>
-        <input type="number" id="CE" name="CE" required>
+    <div class="container">
+        <h2>Manager Settings</h2>
+        <form action="/settings" method="post">
+            <label for="CE">CE:</label>
+            <input type="number" id="CE" name="CE" required>
+            <br>
+            <label for="MI">MI:</label>
+            <input type="number" id="MI" name="MI" required>
+            <br>
+            <label for="Trans">Trans:</label>
+            <input type="number" id="Trans" name="Trans" required>
+            <br>
+            <button type="submit">Update Headcount</button>
+        </form>
 
-        <label for="MI">MI (Mid-Level Employees):</label>
-        <input type="number" id="MI" name="MI" required>
+        <p>Current Total Headcount: {{ total_headcount }}</p>
+        <p>Current Trans Count: {{ trans_count }}</p>
 
-        <label for="Trans">Trans (Transitional Employees):</label>
-        <input type="number" id="Trans" name="Trans" required>
-
-        <button type="submit">Update Headcount</button>
-    </form>
-
-    <p>Current Total Headcount: {{ total_headcount }}</p>
-    <p>Current Critical Role Allocation: {{ critical_role_count }}</p>
-
-    <a href="/">Back to Home</a>
+        <br>
+        <a href="/"><button type="button">Back to Home</button></a>
+        <form action="/reset" method="post">
+            <button type="submit">Reset for Next Shift</button>
+        </form>
+    </div>
 </body>
 </html>

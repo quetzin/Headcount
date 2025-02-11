@@ -1,43 +1,66 @@
 <!DOCTYPE html>
 <html lang="en">
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Amazon Headcount & Role Assignment</title>
+    <title>Headcount Tracker</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-    <h2>Headcount Tracker (Limit: {{ total_headcount }})</h2>
-    <p>Current Check-ins: {{ associates|length }}</p>
+    <div class="container">
+        <h2>Headcount Tracker</h2>
+        <p>Total Allowed Headcount: {{ total_headcount }}</p>
+        <p>Current Check-ins: {{ associates|length }}</p>
+        <p>Current Trans Workers: {{ trans_associates|length }}</p>
 
-    <form action="/checkin" method="post">
-        <input type="text" name="name" placeholder="Associate Name" required>
-        <label>
-            <input type="checkbox" name="has_training"> Has Critical Training
-        </label>
-        <button type="submit">Check-In</button>
-    </form>
+        <form action="/checkin" method="post">
+            <input type="text" name="badge_id" placeholder="Scan Badge Here" required>
+            <label>
+                <input type="checkbox" name="in_trans"> Working in Trans
+            </label>
+            <button type="submit">Check-In</button>
+        </form>
 
-    <h3>Assigned Roles</h3>
-    {% for role, details in roles.items() %}
-        <h4>{{ role }}</h4>
+        <h3>Checked-in Associates</h3>
         <ul>
-            {% for name in details["assigned"] %}
-                <li>{{ name }}</li>
+            {% for name in associates %}
+                <li>
+                    {{ name }}
+                    <form action="/remove" method="post" style="display:inline;">
+                        <input type="hidden" name="name" value="{{ name }}">
+                        <button type="submit">Remove</button>
+                    </form>
+                    <form action="/move" method="post" style="display:inline;">
+                        <input type="hidden" name="name" value="{{ name }}">
+                        <button type="submit">Move to Trans</button>
+                    </form>
+                </li>
             {% endfor %}
         </ul>
-    {% endfor %}
 
-    <form action="/reset" method="post">
-        <button type="submit">Reset for Next Shift</button>
-    </form>
+        <h3>Associates in Trans</h3>
+        <ul>
+            {% for name in trans_associates %}
+                <li>
+                    {{ name }}
+                    <form action="/remove" method="post" style="display:inline;">
+                        <input type="hidden" name="name" value="{{ name }}">
+                        <button type="submit">Remove</button>
+                    </form>
+                    <form action="/move" method="post" style="display:inline;">
+                        <input type="hidden" name="name" value="{{ name }}">
+                        <button type="submit">Move to Regular</button>
+                    </form>
+                </li>
+            {% endfor %}
+        </ul>
 
-    <!-- New Button to Route to Settings -->
-    <br>
-    <a href="/settings">
-        <button type="button">Go to Settings</button>
-    </a>
+        <form action="/reset" method="post">
+            <button type="submit">Reset for Next Shift</button>
+        </form>
 
+        <br>
+        <a href="/settings"><button type="button">Go to Settings</button></a>
+    </div>
 </body>
 </html>
