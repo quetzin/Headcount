@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amazon Headcount & Role Assignment</title>
+</head>
+<body>
+    <h2>Headcount Tracker (Limit: {{ total_headcount }})</h2>
+    <p>Current Check-ins: {{ associates|length }}</p>
+
+    <form action="/checkin" method="post">
+        <input type="text" name="name" placeholder="Associate Name" required>
+        <label>
+            <input type="checkbox" name="has_training"> Has Critical Training
+        </label>
+        <button type="submit">Check-In</button>
+    </form>
+
+    <h3>Assigned Roles</h3>
+    {% for role, details in roles.items() %}
+        <h4>{{ role }}</h4>
+        <ul>
+            {% for name in details["assigned"] %}
+                <li>{{ name }}</li>
+            {% endfor %}
+        </ul>
+    {% endfor %}
+
+    <form action="/reset" method="post">
+        <button type="submit">Reset for Next Shift</button>
+    </form>
+
+    <!-- New Button to Route to Settings -->
+    <br>
+    <a href="/settings">
+        <button type="button">Go to Settings</button>
+    </a>
+
+</body>
+</html>
