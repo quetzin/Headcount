@@ -17,7 +17,7 @@
             <input type="text" name="badge_id" placeholder="Scan Badge Here" required>
             <label for="role">Select Role:</label>
             <select name="role" required>
-                <option value="Trans">Trans</option>
+                <option value="Not Sure">Not Sure</option>
                 {% for category, role_list in roles.items() %}
                     {% for role in role_list %}
                         <option value="{{ role }}">{{ role }}</option>

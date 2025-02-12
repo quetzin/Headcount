@@ -41,7 +41,7 @@ roles = {
 
 # Store checked-in associates (now a dictionary to track roles)
 associates = {}
-trans_associates = {}  # Store associates working in Trans or Pit
+trans_associates = {}  # Store associates working in Trans, Pit, or Robotics Operator
 
 @app.route("/")
 def index():
@@ -87,7 +87,7 @@ def checkin():
     if name in associates or name in trans_associates:
         return jsonify({"error": "Badge already scanned"}), 400
 
-    if role in ["Trans", "Pit"]:
+    if role in ["Trans", "Pit", "Robotics Operator"]:
         trans_associates[name] = role  # Store associate in trans workers counter
     else:
         associates[name] = role  # Store associate in regular check-ins
@@ -109,13 +109,13 @@ def move():
     new_role = request.form["new_role"]
     if name in associates:
         del associates[name]
-        if new_role in ["Trans", "Pit"]:
+        if new_role in ["Trans", "Pit", "Robotics Operator"]:
             trans_associates[name] = new_role
         else:
             associates[name] = new_role
     elif name in trans_associates:
         del trans_associates[name]
-        if new_role in ["Trans", "Pit"]:
+        if new_role in ["Trans", "Pit", "Robotics Operator"]:
             trans_associates[name] = new_role
         else:
             associates[name] = new_role
