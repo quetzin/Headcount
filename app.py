@@ -82,7 +82,7 @@ def assign_roles():
 def checkin():
     badge_id = request.form["badge_id"]
     role = request.form.get("role")
-    name = barcode_to_info.get(badge_id, "Unknown")
+    name = barcode_to_info.get(badge_id, badge_id)  # Display barcode if not found in JSON
 
     if name in associates or name in trans_associates:
         return jsonify({"error": "Badge already scanned"}), 400
