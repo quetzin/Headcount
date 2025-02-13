@@ -75,7 +75,9 @@ def checkin():
     if badge_id in associates:
         return jsonify({"error": "Badge already scanned"}), 400
 
-    name = barcode_to_info.get(badge_id, f"Unknown ({badge_id})")
+    # Display barcode itself if the associate is unknown
+    name = barcode_to_info.get(badge_id, badge_id)  # Now defaults to badge_id instead of "Unknown"
+
     assigned_role = assigned_roles.get(badge_id, "Unassigned")
     associates[badge_id] = assigned_role
 
@@ -83,6 +85,7 @@ def checkin():
         trans_workers_count += 1
 
     return redirect(url_for("index"))
+
 
 @app.route("/remove", methods=["POST"])
 def remove():

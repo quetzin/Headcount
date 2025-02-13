@@ -22,7 +22,7 @@
         <ul>
             {% for barcode, role in associates.items() %}
                 <li>
-                    {{ barcode_to_info.get(barcode, "Unknown") }} - Role: {{ role }}
+                    {{ barcode_to_info.get(barcode, barcode) }} - Role: {{ role }} <!-- Displays barcode if unknown -->
                     <form action="/remove" method="post" style="display:inline;">
                         <input type="hidden" name="badge_id" value="{{ barcode }}">
                         <button type="submit">Remove</button>
