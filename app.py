@@ -8,124 +8,99 @@ app = Flask(__name__)
 with open("names.json", "r") as f:
     associates_data = json.load(f)
 
-# Create a mapping from barcode (as a string) to first name and login
+# Create mappings from barcode to first name and login
 barcode_to_info = {str(associate["barcode"]): f"{associate['first_name']} ({associate['login']})" for associate in associates_data}
 
 # Default values for CE, MI, and Trans
-total_headcount = 0  # Will be dynamically set
-trans_count = 0  # Will be dynamically set
+total_headcount = 0
+trans_count = 0
 
 # Predefined roles
 roles = {
-    "Critical": {
-        "Pit": 0,
-        "CPT": 0,
-        "Ship Clerk": 0,
-        "DEA": 0,
-        "Fluid PS": 0,
-        "Main PS": 0,
-        "Robotics Operator": 0,
-    },
-    "Non-Critical": {
-        "Flats": 0,
-        "MI": 0,
-        "WS": 0,
-        "Fluids": 0,
-        "Main High Cap": 0,
-        "Mid High Cap": 0,
-        "Mid Cap": 0,
-        "Trans": 0,
-        "Carts": 0,
-    }
+    "Critical": ["Pit", "CPT", "Ship Clerk", "DEA", "Fluid PS", "Main PS", "Robotics Operator"],
+    "Non-Critical": ["Flats", "MI", "WS", "Fluids", "Main High Cap", "Mid High Cap", "Mid Cap", "Trans", "Carts"]
 }
 
-# Store checked-in associates (now a dictionary to track roles)
+# Store checked-in associates with assigned roles
 associates = {}
-trans_associates = {}  # Store associates working in Trans, Pit, or Robotics Operator
+assigned_roles = {}
+trans_workers_count = 0  # Counter for Trans Workers
 
 @app.route("/")
 def index():
-    return render_template("index.html", associates=associates, trans_associates=trans_associates, roles=roles, total_headcount=total_headcount, trans_count=trans_count)
+    non_trans_checkins = sum(1 for role in associates.values() if role not in ["Pit", "Trans", "Robotics Operator"])
+    return render_template("index.html", 
+                           associates=associates, 
+                           assigned_roles=assigned_roles, 
+                           total_headcount=total_headcount, 
+                           trans_count=trans_count, 
+                           trans_workers_count=trans_workers_count,
+                           current_checkins=non_trans_checkins,
+                           barcode_to_info=barcode_to_info)
 
 @app.route("/settings", methods=["GET", "POST"])
 def settings():
     global total_headcount, trans_count
     if request.method == "POST":
-        ce = int(request.form["CE"])
-        mi = int(request.form["MI"])
-        trans = int(request.form["Trans"])
+        ce = int(request.form.get("CE", 0))
+        mi = int(request.form.get("MI", 0))
+        trans = int(request.form.get("Trans", 0))
 
-        total_headcount = math.ceil(ce / 550)  # Adjust total headcount, rounding up
-        trans_count = math.ceil(trans / 1000)  # Number of people needed for Trans, rounding up
+        total_headcount = math.ceil(ce / 550)
+        trans_count = math.ceil(trans / 1000)
         
         if trans > trans_count * 1000:
             return jsonify({"error": "Transitional Employees cannot exceed " + str(trans_count * 1000)}), 400
         
         return redirect(url_for("assign_roles"))
+    
     return render_template("settings.html", total_headcount=total_headcount, trans_count=trans_count)
 
 @app.route("/assign_roles", methods=["GET", "POST"])
 def assign_roles():
-    global roles
+    global assigned_roles
     if request.method == "POST":
-        assigned_total = sum(int(request.form[role]) for category in roles for role in roles[category])
-        if assigned_total != total_headcount:
-            return jsonify({"error": "Total assigned must equal total headcount"}), 400
-
-        for category in roles:
-            for role in roles[category]:
-                roles[category][role] = int(request.form[role])
+        assigned_roles = {barcode: role for barcode, role in request.form.items()}
         return redirect(url_for("index"))
-    return render_template("assign_roles.html", roles=roles, total_headcount=total_headcount)
+    
+    return render_template("assign_roles.html", assigned_roles=assigned_roles, roles=roles, associates_data=associates_data, total_headcount=total_headcount)
 
 @app.route("/checkin", methods=["POST"])
 def checkin():
-    badge_id = request.form["badge_id"]
-    role = request.form.get("role")
-    name = barcode_to_info.get(badge_id, badge_id)  # Display barcode if not found in JSON
+    global trans_workers_count
 
-    if name in associates or name in trans_associates:
+    badge_id = request.form["badge_id"]
+
+    if badge_id in associates:
         return jsonify({"error": "Badge already scanned"}), 400
 
-    if role in ["Trans", "Pit", "Robotics Operator"]:
-        trans_associates[name] = role  # Store associate in trans workers counter
-    else:
-        associates[name] = role  # Store associate in regular check-ins
-    
+    name = barcode_to_info.get(badge_id, f"Unknown ({badge_id})")
+    assigned_role = assigned_roles.get(badge_id, "Unassigned")
+    associates[badge_id] = assigned_role
+
+    if assigned_role in ["Pit", "Trans", "Robotics Operator"]:
+        trans_workers_count += 1
+
     return redirect(url_for("index"))
 
 @app.route("/remove", methods=["POST"])
 def remove():
-    name = request.form["name"]
-    if name in associates:
-        del associates[name]
-    elif name in trans_associates:
-        del trans_associates[name]
-    return redirect(url_for("index"))
+    global trans_workers_count
+    
+    badge_id = request.form["badge_id"]
+    if badge_id in associates:
+        role = associates[badge_id]
+        if role in ["Pit", "Trans", "Robotics Operator"]:
+            trans_workers_count -= 1
+        del associates[badge_id]
 
-@app.route("/move", methods=["POST"])
-def move():
-    name = request.form["name"]
-    new_role = request.form["new_role"]
-    if name in associates:
-        del associates[name]
-        if new_role in ["Trans", "Pit", "Robotics Operator"]:
-            trans_associates[name] = new_role
-        else:
-            associates[name] = new_role
-    elif name in trans_associates:
-        del trans_associates[name]
-        if new_role in ["Trans", "Pit", "Robotics Operator"]:
-            trans_associates[name] = new_role
-        else:
-            associates[name] = new_role
     return redirect(url_for("index"))
 
 @app.route("/reset", methods=["POST"])
 def reset():
-    global associates, trans_associates
-    associates = {}  # Reset all checked-in associates
-    trans_associates = {}  # Reset all trans workers
+    global associates, assigned_roles, trans_workers_count
+    associates = {}
+    trans_workers_count = 0
     return redirect(url_for("index"))
 
 if __name__ == "__main__":

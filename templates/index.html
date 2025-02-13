@@ -10,75 +10,33 @@
     <div class="container">
         <h2>Headcount Tracker</h2>
         <p>Total Allowed Headcount: {{ total_headcount }}</p>
-        <p>Current Check-ins: {{ associates|length }}</p>
-        <p>Current Trans Workers: {{ trans_associates|length }}</p>
+        <p>Current Check-ins (excluding Trans Workers): {{ current_checkins }}</p>
+        <p>Total Trans Workers: {{ trans_workers_count }}</p> <!-- New counter displayed -->
 
         <form action="/checkin" method="post">
-            <input type="text" name="badge_id" placeholder="Scan Badge Here" required>
-            <br>
-            <label for="role">Select Role:</label>
-            <select name="role" required>
-                <option value="Not Sure">Not Sure</option>
-                {% for category, role_list in roles.items() %}
-                    {% for role in role_list %}
-                        <option value="{{ role }}">{{ role }}</option>
-                    {% endfor %}
-                {% endfor %}
-            </select>
+            <input type="text" name="badge_id" placeholder="Scan Badge Here" required autofocus>
             <button type="submit">Check-In</button>
         </form>
 
         <h3>Checked-in Associates</h3>
         <ul>
-            {% for name, role in associates.items() %}
+            {% for barcode, role in associates.items() %}
                 <li>
-                    {{ name }} - {{ role }}
+                    {{ barcode_to_info.get(barcode, "Unknown") }} - Role: {{ role }}
                     <form action="/remove" method="post" style="display:inline;">
-                        <input type="hidden" name="name" value="{{ name }}">
+                        <input type="hidden" name="badge_id" value="{{ barcode }}">
                         <button type="submit">Remove</button>
-                    </form>
-                    <form action="/move" method="post" style="display:inline;">
-                        <input type="hidden" name="name" value="{{ name }}">
-                        <label for="new_role">Move to:</label>
-                        <select name="new_role" required>
-                            {% for category, role_list in roles.items() %}
-                                {% for role in role_list %}
-                                    <option value="{{ role }}">{{ role }}</option>
-                                {% endfor %}
-                            {% endfor %}
-                        </select>
-                        <button type="submit">Move</button>
                     </form>
                 </li>
             {% endfor %}
         </ul>
 
-        <h3>Current Trans Workers</h3>
-        <ul>
-            {% for name, role in trans_associates.items() %}
-                <li>
-                    {{ name }} - {{ role }}
-                    <form action="/remove" method="post" style="display:inline;">
-                        <input type="hidden" name="name" value="{{ name }}">
-                        <button type="submit">Remove</button>
-                    </form>
-                    <form action="/move" method="post" style="display:inline;">
-                        <input type="hidden" name="name" value="{{ name }}">
-                        <label for="new_role">Move to:</label>
-                        <select name="new_role" required>
-                            {% for category, role_list in roles.items() %}
-                                {% for role in role_list %}
-                                    <option value="{{ role }}">{{ role }}</option>
-                                {% endfor %}
-                            {% endfor %}
-                        </select>
-                        <button type="submit">Move</button>
-                    </form>
-                </li>
-            {% endfor %}
-        </ul>
+        <form action="/reset" method="post">
+            <button type="submit">Reset for Next Shift</button>
+        </form>
 
         <br>
+        <!-- Navigation buttons -->
         <a href="/settings"><button type="button">Go to Settings</button></a>
         <a href="/assign_roles"><button type="button">Assign Roles</button></a>
     </div>

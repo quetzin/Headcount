@@ -5,48 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Assign Roles</title>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
-    <script>
-        function validateTotal() {
-            let totalHeadcount = {{ total_headcount | tojson }};
-            let assignedTotal = 0;
-
-            document.querySelectorAll(".role-input").forEach(input => {
-                assignedTotal += parseInt(input.value) || 0;
-            });
-
-            let difference = assignedTotal - totalHeadcount;
-            if (difference !== 0) {
-                if (difference > 0) {
-                    alert("Total assigned roles exceed the allowed count by " + difference);
-                } else {
-                    alert("Total assigned roles are under the allowed count by " + Math.abs(difference));
-                }
-                return false;
-            }
-            return true;
-        }
-    </script>
 </head>
 <body>
     <div class="container">
         <h2>Assign Roles</h2>
-        <p>Total Headcount: {{ total_headcount }}</p>
-
-        <form action="/assign_roles" method="post" onsubmit="return validateTotal();">
-            <h3>Critical Roles</h3>
-            {% for role in roles["Critical"] %}
-                <label for="{{ role }}">{{ role }}:</label>
-                <input type="number" class="role-input" id="{{ role }}" name="{{ role }}" min="0" required value="{{ roles['Critical'][role] if role in roles['Critical'] else roles['Non-Critical'][role] }}">
-                <br>
-            {% endfor %}
-
-            <h3>Non-Critical Roles</h3>
-            {% for role in roles["Non-Critical"] %}
-                <label for="{{ role }}">{{ role }}:</label>
-                <input type="number" class="role-input" id="{{ role }}" name="{{ role }}" min="0" required value="{{ roles['Critical'][role] if role in roles['Critical'] else roles['Non-Critical'][role] }}">
-                <br>
-            {% endfor %}
-
+        <form action="/assign_roles" method="post">
+            <h3>Assign Associates to Roles</h3>
+            {% if associates_data %}
+                {% for associate in associates_data %}
+                    <label for="{{ associate['barcode'] }}">{{ associate['first_name'] }} ({{ associate['login'] }}):</label>
+                    <select name="{{ associate['barcode'] }}" id="{{ associate['barcode'] }}" required>
+                        <option value="Unassigned" {% if assigned_roles.get(associate['barcode']) == "Unassigned" %}selected{% endif %}>Unassigned</option>
+                        {% for category, role_list in roles.items() %}
+                            {% for role in role_list %}
+                                <option value="{{ role }}" {% if assigned_roles.get(associate['barcode']) == role %}selected{% endif %}>{{ role }}</option>
+                            {% endfor %}
+                        {% endfor %}
+                    </select>
+                    <br>
+                {% endfor %}
+            {% else %}
+                <p>No associates available for role assignment.</p>
+            {% endif %}
             <button type="submit">Submit Assignments</button>
         </form>
 
