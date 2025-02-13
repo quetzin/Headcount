@@ -268,5 +268,30 @@
         "login": "maddyoun",
         "first_name": "Maddison Louise",
         "barcode": "13379837"
+    },
+    {
+        "login": "jacosals",
+        "first_name": "Jacob",
+        "barcode": "14599516"
+    },
+    {
+        "login": "jazmimac",
+        "first_name": "Jazmin",
+        "barcode": "14263355"
+    },
+    {
+        "login": "uelijahg",
+        "first_name": "Elijah",
+        "barcode": "11116752"
+    },
+    {
+        "login": "rmfrasie",
+        "first_name": "Emily",
+        "barcode": "12040566"
+    },
+    {
+        "login": "mfrosjag",
+        "first_name": "Jack",
+        "barcode": "11900770"
     }
 ]
