@@ -10,8 +10,8 @@
     <div class="container">
         <h2>Headcount Tracker</h2>
         <p>Total Allowed Headcount: {{ total_headcount }}</p>
-        <p>Current Check-ins (excluding Trans Workers): {{ current_checkins }}</p>
-        <p>Total Trans Workers: {{ trans_workers_count }}</p> <!-- New counter displayed -->
+        <p>Current Check-ins: {{ current_checkins }}</p>
+        <p>Total Trans Workers: {{ trans_workers_count }}</p>
 
         <form action="/checkin" method="post">
             <input type="text" name="badge_id" placeholder="Scan Badge Here" required autofocus>
@@ -27,6 +27,17 @@
                         <input type="hidden" name="badge_id" value="{{ barcode }}">
                         <button type="submit">Remove</button>
                     </form>
+                    <form action="/reassign_role" method="post" style="display:inline;">
+                        <input type="hidden" name="barcode" value="{{ barcode }}">
+                        <select name="new_role">
+                            {% for category, role_list in roles.items() %}
+                                {% for available_role in role_list %}
+                                    <option value="{{ available_role }}" {% if role == available_role %}selected{% endif %}>{{ available_role }}</option>
+                                {% endfor %}
+                            {% endfor %}
+                        </select>
+                        <button type="submit">Reassign</button>
+                    </form>
                 </li>
             {% endfor %}
         </ul>
@@ -36,7 +47,6 @@
         </form>
 
         <br>
-        <!-- Navigation buttons -->
         <a href="/settings"><button type="button">Go to Settings</button></a>
         <a href="/assign_roles"><button type="button">Assign Roles</button></a>
     </div>

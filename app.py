@@ -36,7 +36,8 @@ def index():
                            trans_count=trans_count, 
                            trans_workers_count=trans_workers_count,
                            current_checkins=non_trans_checkins,
-                           barcode_to_info=barcode_to_info)
+                           barcode_to_info=barcode_to_info,
+                           roles=roles)
 
 @app.route("/settings", methods=["GET", "POST"])
 def settings():
@@ -101,6 +102,26 @@ def reset():
     global associates, assigned_roles, trans_workers_count
     associates = {}
     trans_workers_count = 0
+    return redirect(url_for("index"))
+
+@app.route("/reassign_role", methods=["POST"])
+def reassign_role():
+    global trans_workers_count
+
+    barcode = request.form["barcode"]
+    new_role = request.form["new_role"]
+
+    if barcode in associates:
+        old_role = associates[barcode]
+
+        # Adjust Trans Worker count based on role change
+        if old_role in ["Pit", "Trans", "Robotics Operator"]:
+            trans_workers_count -= 1
+        if new_role in ["Pit", "Trans", "Robotics Operator"]:
+            trans_workers_count += 1
+
+        associates[barcode] = new_role  # Update role assignment
+    
     return redirect(url_for("index"))
 
 if __name__ == "__main__":
