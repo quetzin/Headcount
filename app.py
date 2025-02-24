@@ -5,11 +5,37 @@ import os
 
 app = Flask(__name__)
 
-# Load associates data from JSON file and ensure barcodes are treated as strings
-with open("names.json", "r") as f:
-    associates_data = json.load(f)
+# File paths
+NAMES_FILE = "names.json"
+ASSIGNED_ROLES_FILE = "assigned_roles.json"
 
-# Create mappings from barcode to first name and login
+# Load associates data
+def load_names():
+    if os.path.exists(NAMES_FILE):
+        with open(NAMES_FILE, "r") as f:
+            return json.load(f)
+    return []
+
+def save_names(data):
+    with open(NAMES_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
+# Load assigned roles
+def load_assigned_roles():
+    if os.path.exists(ASSIGNED_ROLES_FILE):
+        with open(ASSIGNED_ROLES_FILE, "r") as f:
+            return json.load(f)
+    return {}
+
+def save_assigned_roles():
+    with open(ASSIGNED_ROLES_FILE, "w") as f:
+        json.dump(assigned_roles, f, indent=4)
+
+# Load data at startup
+associates_data = load_names()
+assigned_roles = load_assigned_roles()
+
+# Create barcode mapping
 barcode_to_info = {str(associate["barcode"]): f"{associate['first_name']} ({associate['login']})" for associate in associates_data}
 
 # Default values for CE, MI, and Trans
@@ -18,35 +44,22 @@ trans_count = 0
 
 # Predefined roles
 roles = {
-    "Critical": ["Pit", "CPT", "Ship Clerk", "DEA", "Fluid PS", "Main PS", "Robotics Operator"],
+    "Critical": ["Pit", "CPT", "Ship Clerk", "DEA", "Fluid PS", "Main PS", "Robotics Operator", "PA"],
     "Non-Critical": ["Flats", "MI", "WS", "Fluids", "Main High Cap", "Mid High Cap", "Mid Cap", "Trans", "Carts"]
 }
 
-# Load assigned roles from JSON if available
-ASSIGNED_ROLES_FILE = "assigned_roles.json"
-
-def load_assigned_roles():
-    """Load assigned roles from JSON file."""
-    if os.path.exists(ASSIGNED_ROLES_FILE):
-        with open(ASSIGNED_ROLES_FILE, "r") as f:
-            return json.load(f)
-    return {}
-
-def save_assigned_roles():
-    """Save assigned roles to JSON file."""
-    with open(ASSIGNED_ROLES_FILE, "w") as f:
-        json.dump(assigned_roles, f, indent=4)
-
-# Load assigned roles on startup
-assigned_roles = load_assigned_roles()
-
 # Store checked-in associates with assigned roles
 associates = {}
-trans_workers_count = 0  # Counter for Trans Workers
+trans_workers_count = 0
+first_pa_checked_in = False
 
 @app.route("/")
 def index():
+    pa_count = sum(1 for role in associates.values() if role == "PA")
     non_trans_checkins = sum(1 for role in associates.values() if role not in ["Pit", "Trans", "Robotics Operator"])
+    if pa_count > 0:
+        non_trans_checkins -= 1
+
     return render_template("index.html", 
                            associates=associates, 
                            assigned_roles=assigned_roles, 
@@ -80,52 +93,87 @@ def assign_roles():
     global assigned_roles
     if request.method == "POST":
         assigned_roles = {barcode: role for barcode, role in request.form.items()}
-        save_assigned_roles()  # Save to JSON file
+        save_assigned_roles()
         return redirect(url_for("index"))
     
     return render_template("assign_roles.html", assigned_roles=assigned_roles, roles=roles, associates_data=associates_data, total_headcount=total_headcount)
 
 @app.route("/checkin", methods=["POST"])
 def checkin():
-    global trans_workers_count
+    global trans_workers_count, first_pa_checked_in
 
     badge_id = request.form["badge_id"]
 
     if badge_id in associates:
         return jsonify({"error": "Badge already scanned"}), 400
 
-    name = barcode_to_info.get(badge_id, badge_id)  # Show barcode if unknown
+    # Check if associate exists
+    if badge_id not in barcode_to_info:
+        return render_template("add_associate.html", barcode=badge_id, roles=roles)
+
     assigned_role = assigned_roles.get(badge_id, "Unassigned")
     associates[badge_id] = assigned_role
 
     if assigned_role in ["Pit", "Trans", "Robotics Operator"]:
         trans_workers_count += 1
 
+    if assigned_role == "PA":
+        if not first_pa_checked_in:
+            first_pa_checked_in = True
+            return redirect(url_for("index"))
+
+    return redirect(url_for("index"))
+
+@app.route("/add_associate", methods=["POST"])
+def add_associate():
+    barcode = request.form["barcode"]
+    first_name = request.form["first_name"]
+    login = request.form["login"]
+    assigned_role = request.form["assigned_role"]
+
+    # Update names.json with new associate
+    new_associate = {"barcode": barcode, "first_name": first_name, "login": login}
+    associates_data.append(new_associate)
+    save_names(associates_data)
+
+    # Update barcode mapping
+    barcode_to_info[barcode] = f"{first_name} ({login})"
+
+    # Assign role and save to assigned_roles.json
+    assigned_roles[barcode] = assigned_role
+    save_assigned_roles()
+
     return redirect(url_for("index"))
 
 @app.route("/remove", methods=["POST"])
 def remove():
-    global trans_workers_count
+    global trans_workers_count, first_pa_checked_in
     
     badge_id = request.form["badge_id"]
     if badge_id in associates:
         role = associates[badge_id]
+
         if role in ["Pit", "Trans", "Robotics Operator"]:
             trans_workers_count -= 1
+
+        if role == "PA":
+            first_pa_checked_in = False
+
         del associates[badge_id]
 
     return redirect(url_for("index"))
 
 @app.route("/reset", methods=["POST"])
 def reset():
-    global associates, trans_workers_count
+    global associates, trans_workers_count, first_pa_checked_in
     associates = {}
     trans_workers_count = 0
+    first_pa_checked_in = False
     return redirect(url_for("index"))
 
 @app.route("/reassign_role", methods=["POST"])
 def reassign_role():
-    global trans_workers_count
+    global trans_workers_count, first_pa_checked_in
 
     barcode = request.form["barcode"]
     new_role = request.form["new_role"]
@@ -133,14 +181,18 @@ def reassign_role():
     if barcode in associates:
         old_role = associates[barcode]
 
-        # Adjust Trans Worker count based on role change
         if old_role in ["Pit", "Trans", "Robotics Operator"]:
             trans_workers_count -= 1
         if new_role in ["Pit", "Trans", "Robotics Operator"]:
             trans_workers_count += 1
 
-        associates[barcode] = new_role  # Update role assignment
-        assigned_roles[barcode] = new_role  # Persist change to JSON
+        if old_role == "PA" and new_role != "PA":
+            first_pa_checked_in = False
+        if new_role == "PA" and not first_pa_checked_in:
+            first_pa_checked_in = True
+
+        associates[barcode] = new_role
+        assigned_roles[barcode] = new_role
         save_assigned_roles()
 
     return redirect(url_for("index"))

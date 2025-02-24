@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Associate</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h2>Add New Associate</h2>
+        <form action="/add_associate" method="post">
+            <input type="hidden" name="barcode" value="{{ barcode }}">
+            <label for="first_name">First Name:</label>
+            <input type="text" id="first_name" name="first_name" required>
+            <br>
+            <label for="login">Login:</label>
+            <input type="text" id="login" name="login" required>
+            <br>
+            <label for="assigned_role">Assign Role:</label>
+            <select id="assigned_role" name="assigned_role">
+                {% for category, role_list in roles.items() %}
+                    {% for role in role_list %}
+                        <option value="{{ role }}">{{ role }}</option>
+                    {% endfor %}
+                {% endfor %}
+            </select>
+            <br>
+            <button type="submit">Add Associate</button>
+        </form>
+        <br>
+        <a href="/"><button type="button">Cancel</button></a>
+    </div>
+</body>
+</html>
