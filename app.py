@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 import json
 import math
+import os
 
 app = Flask(__name__)
 
@@ -21,9 +22,26 @@ roles = {
     "Non-Critical": ["Flats", "MI", "WS", "Fluids", "Main High Cap", "Mid High Cap", "Mid Cap", "Trans", "Carts"]
 }
 
+# Load assigned roles from JSON if available
+ASSIGNED_ROLES_FILE = "assigned_roles.json"
+
+def load_assigned_roles():
+    """Load assigned roles from JSON file."""
+    if os.path.exists(ASSIGNED_ROLES_FILE):
+        with open(ASSIGNED_ROLES_FILE, "r") as f:
+            return json.load(f)
+    return {}
+
+def save_assigned_roles():
+    """Save assigned roles to JSON file."""
+    with open(ASSIGNED_ROLES_FILE, "w") as f:
+        json.dump(assigned_roles, f, indent=4)
+
+# Load assigned roles on startup
+assigned_roles = load_assigned_roles()
+
 # Store checked-in associates with assigned roles
 associates = {}
-assigned_roles = {}
 trans_workers_count = 0  # Counter for Trans Workers
 
 @app.route("/")
@@ -62,6 +80,7 @@ def assign_roles():
     global assigned_roles
     if request.method == "POST":
         assigned_roles = {barcode: role for barcode, role in request.form.items()}
+        save_assigned_roles()  # Save to JSON file
         return redirect(url_for("index"))
     
     return render_template("assign_roles.html", assigned_roles=assigned_roles, roles=roles, associates_data=associates_data, total_headcount=total_headcount)
@@ -75,9 +94,7 @@ def checkin():
     if badge_id in associates:
         return jsonify({"error": "Badge already scanned"}), 400
 
-    # Display barcode itself if the associate is unknown
-    name = barcode_to_info.get(badge_id, badge_id)  # Now defaults to badge_id instead of "Unknown"
-
+    name = barcode_to_info.get(badge_id, badge_id)  # Show barcode if unknown
     assigned_role = assigned_roles.get(badge_id, "Unassigned")
     associates[badge_id] = assigned_role
 
@@ -85,7 +102,6 @@ def checkin():
         trans_workers_count += 1
 
     return redirect(url_for("index"))
-
 
 @app.route("/remove", methods=["POST"])
 def remove():
@@ -102,7 +118,7 @@ def remove():
 
 @app.route("/reset", methods=["POST"])
 def reset():
-    global associates, assigned_roles, trans_workers_count
+    global associates, trans_workers_count
     associates = {}
     trans_workers_count = 0
     return redirect(url_for("index"))
@@ -124,7 +140,9 @@ def reassign_role():
             trans_workers_count += 1
 
         associates[barcode] = new_role  # Update role assignment
-    
+        assigned_roles[barcode] = new_role  # Persist change to JSON
+        save_assigned_roles()
+
     return redirect(url_for("index"))
 
 if __name__ == "__main__":
