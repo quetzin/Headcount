@@ -293,5 +293,55 @@
         "login": "mfrosjag",
         "first_name": "Jack",
         "barcode": "11900770"
+    },
+    {
+        "barcode": "13670365",
+        "first_name": "Shoeaib",
+        "login": "usamadah"
+    },
+    {
+        "barcode": "14507220",
+        "first_name": "Alex",
+        "login": "nalhende"
+    },
+    {
+        "barcode": "11222258",
+        "first_name": "Felix",
+        "login": "valfelix"
+    },
+    {
+        "barcode": "12849888",
+        "first_name": "Deci",
+        "login": "aydeci"
+    },
+    {
+        "barcode": "12238604",
+        "first_name": "Emiliano",
+        "login": "yemiliar"
+    },
+    {
+        "barcode": "14190569",
+        "first_name": "Andrew",
+        "login": "umooneya"
+    },
+    {
+        "barcode": "12592113",
+        "first_name": "Eddie",
+        "login": "weddilop"
+    },
+    {
+        "barcode": "11962500",
+        "first_name": "Jacob",
+        "login": "phujacb"
+    },
+    {
+        "barcode": "13877057",
+        "first_name": "Mason",
+        "login": "behrmaso"
+    },
+    {
+        "barcode": "14717428",
+        "first_name": "Lakota",
+        "login": "dylakotr"
     }
 ]
