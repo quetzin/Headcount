@@ -86,6 +86,20 @@ def assign_roles():
         return redirect(url_for("index"))
     return render_template("assign_roles.html", assigned_roles=assigned_roles, roles=roles, associates_data=associates_data, total_headcount=total_headcount)
 
+@app.route("/add_associate", methods=["POST"])
+def add_associate():
+    barcode = request.form["barcode"]
+    first_name = request.form["first_name"]
+    login = request.form["login"]
+    assigned_role = request.form["assigned_role"]
+    new_associate = {"barcode": barcode, "first_name": first_name, "login": login}
+    associates_data.append(new_associate)
+    save_names(associates_data)
+    barcode_to_info[barcode] = f"{first_name} ({login})"
+    assigned_roles[barcode] = assigned_role
+    save_assigned_roles()
+    return redirect(url_for("index"))
+
 @app.route("/checkin", methods=["POST"])
 def checkin():
     global trans_workers_count, first_pa_checked_in, associates
@@ -100,26 +114,6 @@ def checkin():
         trans_workers_count += 1
     if assigned_role == "PA" and not first_pa_checked_in:
         first_pa_checked_in = True
-    return redirect(url_for("index"))
-
-@app.route("/reassign_role", methods=["POST"])
-def reassign_role():
-    global trans_workers_count, first_pa_checked_in
-    barcode = request.form["barcode"]
-    new_role = request.form["new_role"]
-    if barcode in associates:
-        old_role = associates[barcode]
-        if old_role in ["Pit", "Trans", "Robotics Operator"]:
-            trans_workers_count -= 1
-        if new_role in ["Pit", "Trans", "Robotics Operator"]:
-            trans_workers_count += 1
-        if old_role == "PA" and new_role != "PA":
-            first_pa_checked_in = False
-        if new_role == "PA" and not first_pa_checked_in:
-            first_pa_checked_in = True
-        associates[barcode] = new_role
-        assigned_roles[barcode] = new_role
-        save_assigned_roles()
     return redirect(url_for("index"))
 
 @app.route("/remove", methods=["POST"])
