@@ -39,7 +39,7 @@ barcode_to_info = {
 total_headcount = 0
 trans_count = 0
 roles = {
-    "Critical": ["Pit", "CPT", "Ship Clerk", "DEA", "Fluid PS", "Main PS", "Robotics Operator", "PA"],
+    "Critical": ["Pit", "CPT", "Ship Clerk", "DEA", "Fluid PS", "Main PS", "Robotics Operator", "Jackpot PS", "PA"],
     "Non-Critical": ["Flats", "MI", "WS", "Fluids", "Main High Cap", "Mid High Cap", "Mid Cap", "Trans", "Carts"]
 }
 
