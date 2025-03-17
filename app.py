@@ -72,7 +72,7 @@ def settings():
         ce = int(request.form.get("CE", 0))
         mi = int(request.form.get("MI", 0))
         trans = int(request.form.get("Trans", 0))
-        total_headcount = math.ceil(ce / 550)
+        total_headcount = (ce / 555)
         trans_count = math.ceil(trans / 1000)
         return redirect(url_for("assign_roles"))
     return render_template("settings.html", total_headcount=total_headcount, trans_count=trans_count)
